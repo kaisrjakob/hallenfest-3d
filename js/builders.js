@@ -571,6 +571,17 @@ export function buildScene(scene) {
   B.add(PLANE, 'concrete', M(W / 2, 0, D / 2, 0, -PI / 2).scale(_s.set(W, D, 1)));
   for (const r of L.ROOMS) if (r.floor) { const q = L.R(r.r); B.add(PLANE, r.floor, M(q.cx, 0.006, q.cz, 0, -PI / 2).scale(_s.set(q.w, q.d, 1))); }
 
+  // Gleis und Bodenblech im Hallenboden
+  {
+    const g = L.GLEIS, len = g.z1 - g.z0, zc = (g.z0 + g.z1) / 2;
+    for (const s of [-1, 1]) {
+      B.box('rubber', I, g.x + s * g.spur / 2, 0.002, zc, 0.09, 0.004, len, { color: 0x3a3a3a });
+      B.box('steelDark', I, g.x + s * g.spur / 2, 0.004, zc, 0.05, 0.004, len);
+    }
+    const q = L.R(L.BODENBLECH);
+    B.box('steelDark', I, q.cx, 0.003, q.cz, q.w, 0.006, q.d, { color: 0x8a7a68 });
+  }
+
   // Hallenwände (angeschnitten)
   const t = 0.2, Hh = L.HALL_WALL_H;
   wall(B, 'panel', -t, -t / 2, W + t, -t / 2, t, Hh);

@@ -103,6 +103,10 @@ export const HALLENTOR = { z0: Z(875), z1: Z(970) };
 
 export const GRILL = R([876, 692, 1078, 827]);
 
+// Im Hallenboden eingelassenes Gleis (Gang zwischen Regalenden und Einbau) und Riffelblech-Abdeckung
+export const GLEIS = { x: X(450), z0: Z(440), z1: Z(1040), spur: 1.0 };
+export const BODENBLECH = [478, 962, 536, 1000];
+
 // Absperrkette zwischen Logistik- und Party-Bereich (Polylinien in px)
 export const BARRIERS = [
   [[385, 362], [612, 362]],
