@@ -72,9 +72,18 @@ export const ROOM_WALLS = [
   { a: [716, 512], b: [863, 512], doors: [{ at: 753, w: 0.8 }, { at: 826, w: 0.8 }] },
   { a: [790, 512], b: [790, 595] },
   { a: [692, 595], b: [863, 595] },
-  { a: [692, 595], b: [692, 690], doors: [{ at: 642, w: 0.9 }] },
+  { a: [692, 595], b: [692, 690], fence: true, gate: { at: 642, w: 0.9 } }, // Gehege Max: Gitter zum Gang
   { a: [620, 690], b: [863, 690], doors: [{ at: 656, w: 0.9 }] },
 ];
+
+// Gehege Max: Laufrunde des Hundes, Futternapf und Futterspender (am Gitter, Gangseite)
+const GEHEGE = R([692, 595, 863, 690]);
+export const MAX = {
+  loop: { cx: GEHEGE.x0 + 1.22, cz: GEHEGE.cz, rx: 0.6, rz: 0.58 },
+  bowl: [GEHEGE.x0 + 0.34, GEHEGE.z1 - 0.55],
+  feeder: { x: GEHEGE.x0, z: GEHEGE.z1 - 0.55 },
+  fenceH: 1.2,
+};
 
 export const PALETTENBLOCK = [[627, 440, 708, 458], [627, 507, 708, 525]];
 
@@ -109,6 +118,7 @@ export const VIEWS = {
   party:     { label: 'Party-Bereich', pos: [22.5, 8.5, 11],   target: [10.5, 0.3, 19], fitR: 8 },
   bar:       { label: 'Bar & Musik',   pos: [13.4, 2.2, 19.6], target: [7.4, 1.1, 14.0], eye: true },
   stehtische:{ label: 'Stehtische',    pos: [9.6, 1.8, 22.4],  target: [12.4, 1.0, 14.8], eye: true },
+  max:       { label: 'Max',           pos: [14.85, 3.5, 14.1], target: [16.75, 0.5, 15.45], eye: true },
   eingang:   { label: 'Eingang #1',    pos: [19.6, 1.65, 22.2],target: [9, 1.2, 17.8], eye: true },
   grill:     { label: 'Grill',         pos: [29.8, 3.6, 25.6], target: [22.6, 0.9, 17.6], fitR: 5.5 },
   logistik:  { label: 'Logistik',      pos: [-7, 13, 28],      target: [7, 1, 11], fitR: 13 },
@@ -130,6 +140,7 @@ export const LABELS = [
   ['Ein/Ausgang #2', X(863) + 0.4, 2.7, EXIT2.z, 'exit'],
   ['Hallentor', X(863) + 0.4, 3.7, (HALLENTOR.z0 + HALLENTOR.z1) / 2, 'exit'],
   ['Palettenregal', X(200), 6.6, Z(253), 'minor'],
+  ['Futterspender', X(692) - 0.2, 1.85, Z(690) - 0.55, 'main'],
   ...MONDI.map((r) => ['Mondi Pap', R(r).cx, 1.7, R(r).cz, 'minor']),
   ...PALETTENBLOCK.map((r) => ['Palettenblock?', R(r).cx, 1.3, R(r).cz, 'minor']),
   ...ROOMS.filter((r) => r.name).map((r) => [r.name, R(r.r).cx, ROOM_WALL_H + 0.3, R(r.r).cz, 'room']),

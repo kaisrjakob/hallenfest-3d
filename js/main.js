@@ -7,6 +7,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildScene } from './builders.js';
+import { createMax } from './max.js';
 import * as L from './layout.js';
 
 const params = new URLSearchParams(location.search);
@@ -186,9 +187,13 @@ function resize() {
 addEventListener('resize', () => { resize(); if (!anim) goTo(currentView, true); });
 
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-let framesAfterReady = 0, settleUntil = 0;
+let framesAfterReady = 0, settleUntil = 0, lastNow = 0;
 function loop(now) {
   requestAnimationFrame(loop);
+  // Max läuft dauerhaft → jedes Bild neu zeichnen
+  max.update(lastNow ? (now - lastNow) / 1000 : 0);
+  lastNow = now;
+  dirty = true;
   if (anim) {
     const k = Math.min(1, (now - anim.t0) / anim.dur), e = ease(k);
     camera.position.lerpVectors(anim.fromPos, anim.pos, e);
@@ -211,7 +216,7 @@ function loop(now) {
 // ---------- UI ----------
 function buildUI() {
   const bar = document.getElementById('views');
-  const order = ['overview', 'top', 'party', 'bar', 'stehtische', 'eingang', 'grill', 'logistik'];
+  const order = ['overview', 'top', 'party', 'bar', 'stehtische', 'max', 'eingang', 'grill', 'logistik'];
   for (const name of order) {
     const b = document.createElement('button');
     b.textContent = L.VIEWS[name].label;
@@ -230,15 +235,42 @@ function buildUI() {
     quality = keys[(keys.indexOf(quality) + 1) % keys.length];
     applyQuality();
   };
+  document.getElementById('btn-feed').onclick = () => {
+    if (currentView !== 'max') { currentView = 'max'; goTo('max'); }
+    feedMax();
+  };
+  // Antippen/Klicken des Futterspenders im Modell (nicht beim Drehen der Ansicht)
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  let down = null;
+  labelRenderer.domElement.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; });
+  labelRenderer.domElement.addEventListener('pointerup', (e) => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return;
+    const r = labelRenderer.domElement.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    if (ray.intersectObject(max.feeder, true).length) feedMax();
+  });
   const hint = document.getElementById('hint');
   const hideHint = () => hint.classList.add('hide');
   labelRenderer.domElement.addEventListener('pointerdown', hideHint, { once: true });
   setTimeout(hideHint, 9000);
 }
 
-let world;
+let toastTimer = 0;
+function feedMax() {
+  const n = max.feed();
+  const t = document.getElementById('toast');
+  t.textContent = n === 1 ? 'Max frisst – danke fürs Füttern!' : `Max frisst – schon ${n}× gefüttert`;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+let world, max;
 function start() {
   world = buildScene(scene);
+  max = createMax(scene);
+  labels.push(max.label);
   if (renderView) {
     document.body.classList.add('render');
     if (params.get('zones') === '1') world.zones.visible = true;

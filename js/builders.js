@@ -172,6 +172,7 @@ function makeMaterials() {
     return m;
   };
   mats.film = glassy(0xffffff, 0.14, 0.12);
+  mats.water = glassy(0x6fa8c8, 0.75, 0.02);
   mats.glass = glassy(0xffffff, 0.28, 0.04);
   mats.beer = glassy(0xd88a14, 0.85, 0.1);
   mats.bottleGreen = glassy(0x1b5c2a, 0.9, 0.1);
@@ -336,6 +337,19 @@ function wall(B, key, x0, z0, x1, z1, t, h, openings = [], capKey = 'cutCap', ca
   else B.box(capKey, I, fixed, h + 0.004 + capLift, c, t + 0.004, 0.008, len);
 }
 
+// Gitter des Hundegeheges (Wand entlang z), mit geschlossener Gittertür
+function fence(B, wd) {
+  const x = L.X(wd.a[0]), z0 = L.Z(wd.a[1]) + 0.06, z1 = L.Z(wd.b[1]) - 0.06, h = L.MAX.fenceH;
+  const g0 = L.Z(wd.gate.at) - wd.gate.w / 2, g1 = L.Z(wd.gate.at) + wd.gate.w / 2;
+  for (const z of [z0, g0, g1, z1]) B.box('steelDark', I, x, h / 2, z, 0.05, h, 0.05);
+  for (const y of [0.06, h - 0.02]) B.box('steelDark', I, x, y, (z0 + z1) / 2, 0.035, 0.035, z1 - z0);
+  for (let z = z0 + 0.09; z < z1 - 0.04; z += 0.09) B.rod('steelDark', I, [x, 0.06, z], [x, h - 0.02, z], 0.007, { seg: 6 });
+  // Gittertür: Rahmen, Scharniere, Riegel
+  for (const y of [0.35, h - 0.25]) B.box('steel', I, x, y, g0 + 0.02, 0.07, 0.08, 0.03);
+  B.box('steelDark', I, x, 0.6, (g0 + g1) / 2, 0.03, 0.03, g1 - g0 - 0.06);
+  B.box('steel', I, x - 0.03, 0.95, g1 - 0.07, 0.03, 0.05, 0.12);
+}
+
 function desk(B, x, z, ry) {
   const P = M(x, 0, z, ry);
   B.box('deskTop', P, 0, 0.735, 0, 1.6, 0.03, 0.8);
@@ -401,6 +415,7 @@ export function buildScene(scene) {
 
   // Einbau: Wände, Türen
   L.ROOM_WALLS.forEach((wd, i) => {
+    if (wd.fence) { fence(B, wd); return; }
     const tt = 0.12;
     const alongX = wd.a[1] === wd.b[1];
     let x0 = L.X(wd.a[0]), z0 = L.Z(wd.a[1]), x1 = L.X(wd.b[0]), z1 = L.Z(wd.b[1]);
@@ -463,7 +478,8 @@ export function buildScene(scene) {
     const P = M(L.X(800), 0, L.Z(650));
     B.cyl('fabricBrown', P, 0, 0.1, 0, 0.5, 0.2, { seg: 24, r2: 0.38 });
     B.cyl('fabricGrey', P, 0, 0.12, 0, 0.4, 0.2, { seg: 24, r2: 0.29 });
-    B.cyl('steel', P, 0.8, 0.04, 0.2, 0.1, 0.07, { seg: 16 });
+    B.cyl('steel', P, 0.8, 0.035, 0.2, 0.1, 0.07, { seg: 16 });
+    B.cyl('water', P, 0.8, 0.065, 0.2, 0.088, 0.008, { seg: 16 });
   }
 
   // Palettenregale
