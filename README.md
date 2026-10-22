@@ -5,7 +5,7 @@ https://kaisrjakob.github.io/hallenfest-3d/
 
 PDF mit gerenderten Ansichten: [hallenplan-3d.pdf](hallenplan-3d.pdf)
 
-Maße sind aus dem 2D-Plan abgeleitet (3 Europaletten = 2,4 m), nicht vermessen.
+Maße sind aus dem 2D-Plan abgeleitet (3 Europaletten = 2,4 m), nicht vermessen. Die Ausstattung des Einbaus (Böden, Türen, Fenster, Möbel) folgt Fotos, der Grundriss bleibt der des 2D-Plans.
 
 PDF neu erzeugen (lokaler Server auf Port 8765 nötig):
 

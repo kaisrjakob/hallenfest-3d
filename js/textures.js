@@ -134,6 +134,49 @@ function tileCanvas(S, nx, ny, base, grout, seed) {
 export const tiles = () => tex(tileCanvas(512, 2, 4, [160, 160, 155], '#77766f', 31));
 export const tilesWhite = () => tex(tileCanvas(512, 3, 3, [228, 228, 224], '#b8b8b2', 32));
 
+// Nadelfilz blaugrau, 1 m Kachel
+export function carpet() {
+  const S = 512, [c, g] = canvas(S), r = rng(33);
+  g.fillStyle = '#5d6874'; g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 26000; i++) {
+    const v = r();
+    g.fillStyle = v < 0.45 ? 'rgba(150,162,176,0.55)' : v < 0.9 ? 'rgba(40,46,56,0.5)' : 'rgba(210,214,220,0.6)';
+    g.fillRect(r() * S, r() * S, 1 + r(), 1 + r());
+  }
+  grain(g, S, S, r, 10);
+  return tex(c);
+}
+
+// Akustik-Holzlamellen Nussbaum, 0,5 m Kachel = 10 Lamellen
+export function slats() {
+  const S = 512, [c, g] = canvas(S), r = rng(34);
+  g.fillStyle = '#1e140d'; g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 10; i++) {
+    const t = 0.85 + r() * 0.3;
+    g.fillStyle = `rgb(${110 * t},${72 * t},${44 * t})`;
+    g.fillRect(i * S / 10 + 5, 0, S / 10 - 10, S);
+  }
+  const w = woodCanvas(S, 'rgba(0,0,0,0)', '50,30,15', 35, false);
+  g.globalAlpha = 0.5; g.drawImage(w, 0, 0); g.globalAlpha = 1;
+  for (let i = 0; i < 10; i++) {
+    const x = i * S / 10 + 5, gr = g.createLinearGradient(x, 0, x + S / 10 - 10, 0);
+    gr.addColorStop(0, 'rgba(255,220,180,0.18)'); gr.addColorStop(1, 'rgba(0,0,0,0.25)');
+    g.fillStyle = gr; g.fillRect(x, 0, S / 10 - 10, S);
+  }
+  return tex(c);
+}
+
+// Riffelglas (senkrechte Rippen), wird über die Breite wiederholt
+export function fluted() {
+  const [c, g] = canvas(32, 8);
+  const gr = g.createLinearGradient(0, 0, 32, 0);
+  gr.addColorStop(0, '#c9d3d8'); gr.addColorStop(0.5, '#f4f7f8'); gr.addColorStop(1, '#c9d3d8');
+  g.fillStyle = gr; g.fillRect(0, 0, 32, 8);
+  const t = tex(c);
+  t.repeat.set(40, 1);
+  return t;
+}
+
 export function cartons() {
   // 1,2 m Kachel: Kartons 40 cm breit, 30 cm hoch
   const S = 512, [c, g] = canvas(S), r = rng(41);
@@ -228,16 +271,18 @@ export function sectional() {
   return tex(c);
 }
 
-function stripes(vertical, n) {
+function stripes(vertical, n, colA = '#c8161d', colB = '#f2f2f0') {
   const [c, g] = vertical ? canvas(256, 16) : canvas(16, 256);
   for (let i = 0; i < n; i++) {
-    g.fillStyle = i % 2 ? '#f2f2f0' : '#c8161d';
+    g.fillStyle = i % 2 ? colB : colA;
     if (vertical) g.fillRect(i * 256 / n, 0, 256 / n, 16); else g.fillRect(0, i * 256 / n, 16, 256 / n);
   }
   return tex(c);
 }
 export const stripesU = () => stripes(true, 2);   // entlang u (Kette)
 export const stripesV = () => stripes(false, 8);  // entlang v (Pfosten)
+export const guardStripes = () => stripes(false, 6, '#f2c200', '#1b1b1b');  // Anfahrschutz
+export const awning = () => stripes(true, 12, '#f0a400', '#f6f3ea');          // Markise vor den Fenstern
 
 export function signNoEntry() {
   const [c, g] = canvas(512, 256);

@@ -23,6 +23,7 @@ PAGES = [
     ("bar", "Bar & Musik", "Bar mit Zapfanlage, dahinter Getränkewagen (Kühlanhänger); DJ-Tisch mit Lautsprechern."),
     ("stehtische", "Stehtische & Steh-Bretter", "5 Stehtische mit Husse; Steh-Bretter in das Palettenregal eingehängt (ca. 1,10 m) zum Aufstützen und Abstellen."),
     ("max", "Gehege Max", "Hund Max mit Gitter, Napf und Futterspender – im 3D-Modell live animiert und per Kurbel/Button fütterbar."),
+    ("gang", "Gang im Einbau", "Augenhöhe am Südende: Getränkeregal, Küchenzeile, Kallax und Doppeltür zum Treppenhaus, Ausstattung nach Fotos."),
     ("eingang", "Blick vom Ein-/Ausgang #1", "Augenhöhe (1,65 m) direkt hinter der Tür Richtung Party-Bereich."),
     ("grill", "Grill-Pavillon (draußen)", "Faltpavillon vor Ein-/Ausgang #1 mit Gasgrill, Schwenkgrill und Arbeitstisch."),
     ("logistik", "Abgesperrter Logistikbereich", "Palettenregale mit eingelagerten Kartons; Absperrkette rot/weiß zum Party-Bereich."),

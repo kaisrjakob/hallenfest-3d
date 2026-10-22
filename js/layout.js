@@ -50,30 +50,31 @@ export const BIERBAENKE = [453, 517, 581, 645, 709, 773].map((x0) => R([x0, 945,
 
 // Einbau rechts
 export const ROOMS = [
-  { name: 'Büro 2', r: [620, 155, 863, 320], floor: 'laminate' },
-  { name: 'Küche / Gang', r: [620, 320, 716, 595], floor: 'tiles' },
-  { name: null, r: [620, 595, 692, 690], floor: 'tiles' },
-  { name: 'Ruheraum', r: [716, 320, 863, 395], floor: 'laminate' },
+  { name: 'Büro 2', r: [620, 155, 863, 320], floor: 'carpet' },
+  { name: 'Küche / Gang', r: [620, 320, 716, 595], floor: 'carpet' },
+  { name: null, r: [620, 595, 692, 690], floor: 'carpet' },
+  { name: 'Ruheraum', r: [716, 320, 863, 395], floor: 'carpet' },
   { name: 'Eingang & Treppenhaus', r: [716, 395, 863, 512], floor: 'tiles' },
   { name: 'WC Damen', r: [716, 512, 790, 595], floor: 'tilesWhite' },
   { name: 'WC Herren', r: [790, 512, 863, 595], floor: 'tilesWhite' },
   { name: 'Gehege Max', r: [692, 595, 863, 690], floor: null },
-  { name: 'Büro 1', r: [620, 690, 863, 826], floor: 'laminate' },
+  { name: 'Büro 1', r: [620, 690, 863, 826], floor: 'carpet' },
 ];
 
-// Wände des Einbaus: Strecke a→b (px), Türen: Mittelpunkt (px entlang der Wand) + Breite (m)
+// Wände des Einbaus: Strecke a→b (px), Türen: Mittelpunkt (px entlang der Wand) + Breite (m) + Typ (ohne Typ = weiß),
+// Fenster: Mittelpunkt (px) + Breite (m) + Art, indoor = Seite des Raums (Vorzeichen der Normalen)
 export const ROOM_WALLS = [
   { a: [620, 155], b: [863, 155] },
-  { a: [620, 155], b: [620, 826], doors: [{ at: 348, w: 1.0 }, { at: 480, w: 1.1 }] },
-  { a: [620, 826], b: [863, 826] },
-  { a: [620, 320], b: [863, 320], doors: [{ at: 668, w: 0.9 }] },
-  { a: [716, 320], b: [716, 595], doors: [{ at: 480, w: 1.0 }] },
-  { a: [716, 395], b: [863, 395], doors: [{ at: 800, w: 0.9 }] },
+  { a: [620, 155], b: [620, 826], doors: [{ at: 348, w: 1.0, type: 'steel' }, { at: 480, w: 1.1, type: 'steel' }] },
+  { a: [620, 826], b: [863, 826], indoor: -1, windows: [{ at: 676, w: 2.3, kind: 'frosted' }, { at: 789, w: 2.3, kind: 'awning' }] },
+  { a: [620, 320], b: [863, 320], doors: [{ at: 668, w: 0.9, type: 'glass' }] },
+  { a: [716, 320], b: [716, 595], doors: [{ at: 474, w: 1.6, type: 'double' }] },
+  { a: [716, 395], b: [863, 395], doors: [{ at: 800, w: 0.9, type: 'sliding' }] },
   { a: [716, 512], b: [863, 512], doors: [{ at: 753, w: 0.8 }, { at: 826, w: 0.8 }] },
   { a: [790, 512], b: [790, 595] },
   { a: [692, 595], b: [863, 595] },
   { a: [692, 595], b: [692, 690], fence: true, gate: { at: 642, w: 0.9 } }, // Gehege Max: Gitter zum Gang
-  { a: [620, 690], b: [863, 690], doors: [{ at: 656, w: 0.9 }] },
+  { a: [620, 690], b: [863, 690], doors: [{ at: 656, w: 0.9, type: 'glass', transom: true }] },
 ];
 
 // Gehege Max: Laufrunde des Hundes, Futternapf und Futterspender (am Gitter, Gangseite)
@@ -85,7 +86,15 @@ export const MAX = {
   fenceH: 1.2,
 };
 
-export const PALETTENBLOCK = [[627, 440, 708, 458], [627, 507, 708, 525]];
+// Fenster in der Hallen-Ostwand (z in px)
+export const HALL_WINDOWS = [
+  { at: 237, w: 2.0, kind: 'clear' }, { at: 357, w: 1.4, kind: 'clear' },
+  { at: 714, w: 0.9, kind: 'awning' }, { at: 776, w: 1.7, kind: 'clear' },
+];
+
+// Gang: Getränkeregal an der Westwand, Kallax neben der Treppenhaustür
+export const GETRAENKEREGAL = [622, 380, 640, 430];
+export const KALLAX = [697, 517, 714, 579];
 
 // Öffnungen in der Ostwand (x = 863 px)
 export const EXIT1 = { z: Z(850), w: 1.0 };
@@ -119,6 +128,7 @@ export const VIEWS = {
   bar:       { label: 'Bar & Musik',   pos: [13.4, 2.2, 19.6], target: [7.4, 1.1, 14.0], eye: true },
   stehtische:{ label: 'Stehtische',    pos: [9.6, 1.8, 22.4],  target: [12.4, 1.0, 14.8], eye: true },
   max:       { label: 'Max',           pos: [14.85, 3.5, 14.1], target: [16.75, 0.5, 15.45], eye: true },
+  gang:      { label: 'Gang',          pos: [15.28, 1.65, 15.95], target: [15.6, 1.2, 7.6],  eye: true },
   eingang:   { label: 'Eingang #1',    pos: [19.6, 1.65, 22.2],target: [9, 1.2, 17.8], eye: true },
   grill:     { label: 'Grill',         pos: [29.8, 3.6, 25.6], target: [22.6, 0.9, 17.6], fitR: 5.5 },
   logistik:  { label: 'Logistik',      pos: [-7, 13, 28],      target: [7, 1, 11], fitR: 13 },
@@ -142,6 +152,6 @@ export const LABELS = [
   ['Palettenregal', X(200), 6.6, Z(253), 'minor'],
   ['Futterspender', X(692) - 0.2, 1.85, Z(690) - 0.55, 'main'],
   ...MONDI.map((r) => ['Mondi Pap', R(r).cx, 1.7, R(r).cz, 'minor']),
-  ...PALETTENBLOCK.map((r) => ['Palettenblock?', R(r).cx, 1.3, R(r).cz, 'minor']),
+  ['Getränke', R(GETRAENKEREGAL).cx, 1.9, R(GETRAENKEREGAL).cz, 'minor'],
   ...ROOMS.filter((r) => r.name).map((r) => [r.name, R(r.r).cx, ROOM_WALL_H + 0.3, R(r.r).cz, 'room']),
 ];

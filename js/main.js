@@ -216,7 +216,7 @@ function loop(now) {
 // ---------- UI ----------
 function buildUI() {
   const bar = document.getElementById('views');
-  const order = ['overview', 'top', 'party', 'bar', 'stehtische', 'max', 'eingang', 'grill', 'logistik'];
+  const order = ['overview', 'top', 'party', 'bar', 'stehtische', 'max', 'gang', 'eingang', 'grill', 'logistik'];
   for (const name of order) {
     const b = document.createElement('button');
     b.textContent = L.VIEWS[name].label;
