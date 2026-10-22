@@ -114,6 +114,7 @@ function makeMaterials() {
   const std = (p, tile) => { const m = new THREE.MeshStandardMaterial({ vertexColors: true, ...p }); m.userData.tile = tile; return m; };
   const fabric = TX.fabric(); fabric.repeat.set(10, 4);
   const exit = TX.exitSign();
+  const awning = TX.awning(); awning.repeat.set(3, 1);
   const mats = {
     concrete: std({ map: TX.concrete(), bumpMap: TX.concreteBump(), bumpScale: 0.6, roughness: 0.78 }, 6),
     asphalt: std({ map: TX.asphalt(), roughness: 0.95 }, 3),
@@ -122,7 +123,6 @@ function makeMaterials() {
     corrugated: std({ map: TX.corrugated(), roughness: 0.95 }, 0.5),
     kraft: std({ map: TX.kraft(), roughness: 0.95 }, 1.3),
     strap: std({ color: 0xf0f0ec, roughness: 0.45 }),
-    rackBlue: std({ color: 0x1c4f92, roughness: 0.42, metalness: 0.35 }),
     rackOrange: std({ color: 0xe0611a, roughness: 0.42, metalness: 0.3 }),
     steel: std({ color: 0xb9bdc1, roughness: 0.32, metalness: 0.9 }),
     steelDark: std({ color: 0x2c2e31, roughness: 0.5, metalness: 0.6 }),
@@ -165,6 +165,19 @@ function makeMaterials() {
     stairs: std({ color: 0x9d9b96, roughness: 0.8 }, 1),
     gasBottle: std({ color: 0x8a8f94, roughness: 0.4, metalness: 0.5 }),
     foam: std({ color: 0xfbf6ea, roughness: 0.9 }),
+    carpet: std({ map: TX.carpet(), roughness: 1 }, 1),
+    slats: std({ map: TX.slats(), roughness: 0.6 }, 0.5),
+    awning: std({ map: awning, roughness: 0.85, side: THREE.DoubleSide }),
+    anthracite: std({ color: 0x2f3338, roughness: 0.5, metalness: 0.3 }),
+    frosted: std({ color: 0xe4ecef, roughness: 0.25 }),
+    fluted: std({ map: TX.fluted(), roughness: 0.2 }),
+    greenHandle: std({ color: 0x1d5c38, roughness: 0.35, metalness: 0.3 }),
+    whiteboard: std({ color: 0xfafaf8, roughness: 0.12 }),
+    fabricBlue: std({ color: 0x223f86, roughness: 0.95 }),
+    rackGalv: std({ color: 0xaab0b5, roughness: 0.38, metalness: 0.75 }),
+    rackBlue: std({ color: 0x1c4f92, roughness: 0.42, metalness: 0.35 }),
+    masonry: std({ map: TX.masonry(), roughness: 0.9 }, 1),
+    guard: std({ map: TX.guardStripes(), roughness: 0.5 }),
   };
   const glassy = (color, opacity, rough) => {
     const m = new THREE.MeshPhysicalMaterial({ vertexColors: true, color, transparent: true, opacity, roughness: rough, metalness: 0, clearcoat: 1, depthWrite: false });
@@ -214,28 +227,33 @@ function sheetLoad(B, P, h) {
 }
 
 // Palettenregal: lokale x = Länge, z = Tiefe (0..depth)
-function rack(B, P, len, depth, levels, H, loadLevel) {
+function rack(B, P, len, depth, levels, H, loadLevel, frame = 'rackGalv') {
   const bays = Math.max(1, Math.round(len / 2.85)), bl = len / bays, up = 0.08, ud = 0.07;
   for (let i = 0; i <= bays; i++) {
     const x = Math.min(Math.max(i * bl, up / 2), len - up / 2);
     for (const z of [ud / 2, depth - ud / 2]) {
-      B.box('rackBlue', P, x, H / 2, z, up, H, ud);
+      B.box(frame, P, x, H / 2, z, up, H, ud);
       B.box('steelDark', P, x, 0.005, z, 0.15, 0.01, 0.13);
+      if (i === bays) B.box('guard', P, x + 0.03, 0.2, z, 0.14, 0.4, 0.14);
     }
+    if (i === bays) B.box('rackGalv', P, x + 0.07, 0.2, depth / 2, 0.04, 0.36, depth - 0.12);
     const n = Math.max(3, Math.round(H / 0.95));
     for (let k = 0; k <= n; k++) {
       const y = 0.15 + k * (H - 0.3) / n;
-      B.rod('rackBlue', P, [x, y, ud], [x, y, depth - ud], 0.014, { seg: 6 });
+      B.rod(frame, P, [x, y, ud], [x, y, depth - ud], 0.014, { seg: 6 });
       if (k < n) {
         const y1 = 0.15 + (k + 1) * (H - 0.3) / n;
-        B.rod('rackBlue', P, [x, y, k % 2 ? depth - ud : ud], [x, y1, k % 2 ? ud : depth - ud], 0.012, { seg: 6 });
+        B.rod(frame, P, [x, y, k % 2 ? depth - ud : ud], [x, y1, k % 2 ? ud : depth - ud], 0.012, { seg: 6 });
       }
     }
   }
   for (let b = 0; b < bays; b++) {
     const cx = (b + 0.5) * bl;
     levels.forEach((lv, li) => {
-      if (lv > 0) for (const z of [ud / 2, depth - ud / 2]) B.box('rackOrange', P, cx, lv - 0.055, z, bl - up, 0.11, 0.05);
+      if (lv > 0) for (const z of [ud / 2, depth - ud / 2]) {
+        B.box('rackOrange', P, cx, lv - 0.055, z, bl - up, 0.11, 0.05);
+        for (let k = 0; k < 3; k++) B.box('cabinet', P, b * bl + up / 2 + (bl - up) * (k + 0.5) / 3, lv - 0.055, z + (z < depth / 2 ? -0.027 : 0.027), 0.16, 0.06, 0.004, { color: 0xf5d20a });
+      }
       if (!loadLevel(li)) return;
       for (let k = 0; k < 3; k++) {
         if (rand() > 0.86) continue;
@@ -328,9 +346,9 @@ function wall(B, key, x0, z0, x1, z1, t, h, openings = [], capKey = 'cutCap', ca
     const c = (a + b) / 2, len = b - a, hh = y1 - y0;
     if (alongX) B.box(key, I, c, y0 + hh / 2, fixed, len, hh, t); else B.box(key, I, fixed, y0 + hh / 2, c, t, hh, len);
   };
-  const ops = openings.map((o) => ({ a: o.c - o.w / 2, b: o.c + o.w / 2, h: o.h })).sort((p, q) => p.a - q.a);
+  const ops = openings.map((o) => ({ a: o.c - o.w / 2, b: o.c + o.w / 2, h: o.h, y0: o.y0 ?? 0 })).sort((p, q) => p.a - q.a);
   let cur = s0;
-  for (const o of ops) { piece(cur, o.a, 0, h); piece(o.a, o.b, o.h, h); cur = o.b; }
+  for (const o of ops) { piece(cur, o.a, 0, h); piece(o.a, o.b, 0, o.y0); piece(o.a, o.b, o.h, h); cur = o.b; }
   piece(cur, s1, 0, h);
   const c = (s0 + s1) / 2, len = s1 - s0;
   if (alongX) B.box(capKey, I, c, h + 0.004 + capLift, fixed, len, 0.008, t + 0.004);
@@ -350,21 +368,88 @@ function fence(B, wd) {
   B.box('steel', I, x - 0.03, 0.95, g1 - 0.07, 0.03, 0.05, 0.12);
 }
 
-function desk(B, x, z, ry) {
-  const P = M(x, 0, z, ry);
-  B.box('deskTop', P, 0, 0.735, 0, 1.6, 0.03, 0.8);
-  for (const sx of [-0.75, 0.75]) for (const sz of [-0.35, 0.35]) B.box('steelDark', P, sx, 0.36, sz, 0.05, 0.72, 0.05);
-  B.box('blackPlastic', P, 0, 0.76, -0.22, 0.2, 0.02, 0.15);
-  B.box('blackPlastic', P, 0, 0.88, -0.25, 0.04, 0.24, 0.03);
-  B.box('blackPlastic', P, 0, 1.06, -0.24, 0.6, 0.36, 0.03);
-  B.box('screen', P, 0, 1.06, -0.224, 0.57, 0.33, 0.004);
-  B.box('blackPlastic', P, 0, 0.755, 0.1, 0.44, 0.015, 0.14);
-  // Bürostuhl
-  const C = P.clone().multiply(M(jit(0.2), 0, 0.65, jit(0.5)));
-  B.box('fabricGrey', C, 0, 0.48, 0, 0.5, 0.07, 0.48);
-  B.box('fabricGrey', C, 0, 0.82, 0.24, 0.46, 0.55, 0.06, { rx: 0.08 });
+function officeChair(B, C, seat = 'fabricGrey') {
+  B.box(seat, C, 0, 0.48, 0, 0.5, 0.07, 0.48);
+  B.box(seat, C, 0, 0.82, 0.24, 0.46, 0.55, 0.06, { rx: 0.08 });
   B.cyl('steelDark', C, 0, 0.27, 0, 0.025, 0.42);
   for (let k = 0; k < 5; k++) { const a = k * 2 * PI / 5; B.rod('steelDark', C, [0, 0.07, 0], [Math.cos(a) * 0.3, 0.05, Math.sin(a) * 0.3], 0.018); B.cyl('rubber', C, Math.cos(a) * 0.3, 0.03, Math.sin(a) * 0.3, 0.025, 0.04); }
+}
+
+function desk(B, x, z, ry, { monitors = 1, chair = 'fabricGrey', top = 'deskTop', legs = 'steelDark' } = {}) {
+  const P = M(x, 0, z, ry);
+  B.box(top, P, 0, 0.735, 0, 1.6, 0.03, 0.8);
+  for (const sx of [-0.75, 0.75]) for (const sz of [-0.35, 0.35]) B.box(legs, P, sx, 0.36, sz, 0.05, 0.72, 0.05);
+  for (let i = 0; i < monitors; i++) {
+    const mx = (i - (monitors - 1) / 2) * 0.62;
+    B.box('blackPlastic', P, mx, 0.76, -0.22, 0.2, 0.02, 0.15);
+    B.box('blackPlastic', P, mx, 0.88, -0.25, 0.04, 0.24, 0.03);
+    B.box('blackPlastic', P, mx, 1.06, -0.24, 0.6, 0.36, 0.03);
+    B.box('screen', P, mx, 1.06, -0.224, 0.57, 0.33, 0.004);
+  }
+  if (monitors) B.box('blackPlastic', P, 0, 0.755, 0.1, 0.44, 0.015, 0.14);
+  if (chair) officeChair(B, P.clone().multiply(M(jit(0.2), 0, 0.65, jit(0.5))), chair);
+}
+
+// Fenster in einer Wandöffnung. P: Mitte Brüstung, lokale x entlang der Wand, lokale +z zeigt in den Raum
+function windowUnit(B, P, w, h, wallT, kind) {
+  const f = 0.06;
+  for (const y of [f / 2, h - f / 2]) B.box('doorWhite', P, 0, y, 0, w, f, 0.08);
+  for (const x of [-w / 2 + f / 2, w / 2 - f / 2]) B.box('doorWhite', P, x, h / 2, 0, f, h, 0.08);
+  const sashes = w > 1.2 ? 2 : 1;
+  if (sashes === 2) B.box('doorWhite', P, 0, h / 2, 0, 0.09, h, 0.08);
+  for (let i = 0; i < sashes; i++) {
+    const sw = w / sashes, sx = -w / 2 + sw * (i + 0.5);
+    for (const y of [0.1, h - 0.1]) B.box('doorWhite', P, sx, y, 0.01, sw - 0.12, 0.07, 0.06);
+    for (const d of [-1, 1]) B.box('doorWhite', P, sx + d * (sw / 2 - 0.09), h / 2, 0.01, 0.07, h - 0.2, 0.06);
+    B.box(kind === 'frosted' ? 'frosted' : 'glass', P, sx, h / 2, 0, sw - 0.2, h - 0.24, 0.012);
+    B.box('steel', P, sx + (i ? -1 : 1) * (sw / 2 - 0.1), h / 2, 0.06, 0.025, 0.12, 0.03);
+  }
+  if (kind === 'awning') B.plane('awning', P, 0, h / 2, -wallT / 2 - 0.03, w - 0.1, h - 0.1);
+  B.box('cabinet', P, 0, -0.015, wallT / 2 + 0.09, w + 0.1, 0.03, 0.2);
+  B.box('cabinet', P, 0, -0.5, wallT / 2 + 0.06, w - 0.2, 0.55, 0.08, { color: 0xf6f6f2 });
+  for (let x = -w / 2 + 0.16; x < w / 2 - 0.12; x += 0.05) B.box('cabinet', P, x, -0.5, wallT / 2 + 0.105, 0.012, 0.5, 0.01, { color: 0xdadad4 });
+}
+
+// Tür in einer Einbauwand. P: Anfang der Öffnung am Boden, lokale x entlang der Wand, lokale z = Wandnormale
+function door(B, P, d, tt) {
+  const w = d.w, h = d.h, zarge = d.type === 'double' ? 'frame' : d.type ? 'anthracite' : 'frame';
+  for (const x of [-0.02, w + 0.02]) B.box(zarge, P, x, h / 2 + 0.005, 0, 0.04, h + 0.01, tt + 0.03);
+  if (d.type) B.box(zarge, P, w / 2, h - 0.02, 0, w + 0.08, 0.04, tt + 0.03);
+  if (d.transom) {
+    B.box(zarge, P, w / 2, 2.07, 0, w, 0.05, tt + 0.02);
+    B.box('frosted', P, w / 2, (2.1 + h - 0.04) / 2, 0, w - 0.02, h - 2.14, 0.015, { color: d.type === 'double' ? 0xc7dbe8 : 0xffffff });
+  }
+  if (d.type === 'double') {
+    for (const k of [0, 1]) {
+      const cx = w / 4 + k * w / 2, lw = w / 2 - 0.01;
+      for (const y of [0.05, 2.0]) B.box('frame', P, cx, y, 0, lw, 0.1, 0.05);
+      for (const x of [cx - lw / 2 + 0.04, cx + lw / 2 - 0.04]) B.box('frame', P, x, 1.025, 0, 0.08, 2.05, 0.05);
+      B.box('frosted', P, cx, 1.025, 0, lw - 0.14, 1.86, 0.02, { color: 0xbfd6e6 });
+    }
+    for (const s of [-1, 1]) B.add(new THREE.TorusGeometry(0.11, 0.013, 8, 32), 'greenHandle', P.clone().multiply(M(w / 2, 1.05, s * 0.06)), { uv: false });
+    B.box('rubber', P, w / 2, 0.008, 0.65, 1.0, 0.012, 0.65);
+    return;
+  }
+  if (d.type === 'sliding') {
+    const zs = -(tt / 2 + 0.035), cx = w / 2 - 0.7 * w, lw = w + 0.08;
+    B.box('anthracite', P, w / 2 - 0.35 * w, 2.13, zs - 0.01, 2 * w, 0.07, 0.05);
+    for (const y of [0.04, 2.03]) B.box('anthracite', P, cx, y, zs, lw, 0.08, 0.04);
+    for (const x of [cx - lw / 2 + 0.03, cx + lw / 2 - 0.03]) B.box('anthracite', P, x, 1.035, zs, 0.06, 2.07, 0.04);
+    B.box('fluted', P, cx, 1.035, zs, lw - 0.1, 1.92, 0.015, { uv: false });
+    B.cyl('steel', P, cx + lw / 2 - 0.12, 1.05, zs - 0.03, 0.03, 0.03, { rx: PI / 2, seg: 16 });
+    return;
+  }
+  // Drehflügel offen (~95°)
+  const DP = P.clone().multiply(M(0.02, 0, tt / 2, 0.08));
+  const lw = w - 0.06;
+  if (d.type === 'glass') {
+    for (const y of [0.06, 1.93]) B.box('anthracite', DP, 0.02, y, lw / 2, 0.045, 0.12, lw);
+    for (const z of [0.04, lw - 0.04]) B.box('anthracite', DP, 0.02, 1.0, z, 0.045, 1.98, 0.08);
+    B.box('frosted', DP, 0.02, 1.0, lw / 2, 0.02, 1.76, lw - 0.16, { color: 0xd3e2ea });
+  } else {
+    B.box(d.type ? 'anthracite' : 'doorWhite', DP, 0.02, 1.0, lw / 2, 0.04, 1.98, lw);
+  }
+  B.box(d.type === 'steel' ? 'blackPlastic' : 'steel', DP, 0.06, 1.02, w - 0.14, 0.04, 0.025, 0.12);
 }
 
 // Stehtisch-artige Getränkekisten
@@ -375,6 +460,104 @@ function crateStack(B, P, x, z, n) {
     B.box('crate', P, x, 0.15 + i * 0.3, z, 0.4, 0.29, 0.3, { color: c });
     for (let bx = 0; bx < 4; bx++) for (let bz = 0; bz < 3; bz++) if (i === n - 1) B.cyl('steel', P, x - 0.15 + bx * 0.1, 0.3 + i * 0.3 + 0.01, z - 0.1 + bz * 0.1, 0.013, 0.02, { seg: 6 });
   }
+}
+
+// Büro 1: 4er-Bench, Whiteboard, TV, Stütze, Klimageräte, Garderobe, Palettensessel
+function buero1(B) {
+  const xw = L.X(620) + 0.06, xe = L.X(863) - 0.06, zn = L.Z(690) + 0.06;
+  const bx = 17.6, bz = 17.75, opt = { monitors: 2, chair: 'fabricBlue', legs: 'cabinet' };
+  for (const dx of [-0.8, 0.8]) { desk(B, bx + dx, bz - 0.4, PI, opt); desk(B, bx + dx, bz + 0.4, 0, opt); }
+  B.box('fabricGrey', I, bx, 1.0, bz, 3.2, 0.5, 0.03);
+  B.cyl('cabinet', I, 19.5, L.ROOM_WALL_H / 2, bz, 0.07, L.ROOM_WALL_H, { seg: 16 });
+  // Whiteboard an der Nordwand
+  B.box('steel', I, 19.35, 1.6, zn + 0.012, 1.55, 0.95, 0.02);
+  B.box('whiteboard', I, 19.35, 1.6, zn + 0.024, 1.49, 0.89, 0.006);
+  B.box('steel', I, 19.35, 1.11, zn + 0.05, 1.0, 0.02, 0.07);
+  // TV auf Rollständer
+  {
+    const P = M(19.75, 0, 16.95, -PI / 2);
+    for (const a of [0, PI / 2, PI, -PI / 2]) B.rod('steelDark', P, [0, 0.06, 0], [Math.cos(a) * 0.35, 0.06, Math.sin(a) * 0.35], 0.02, { square: true });
+    B.box('steelDark', P, 0, 0.8, 0, 0.08, 1.5, 0.05);
+    B.box('blackPlastic', P, 0, 1.35, -0.05, 1.1, 0.64, 0.05);
+    B.box('screen', P, 0, 1.35, -0.076, 1.06, 0.6, 0.004);
+  }
+  // Split-Klimageräte an der Westwand
+  for (const [y, z] of [[2.45, 17.3], [2.1, 18.4]]) B.box('cabinet', I, xw + 0.11, y, z, 0.22, 0.28, 0.85, { color: 0xfbfbf9 });
+  // Sideboard, Garderobenständer
+  B.box('cabinet', I, xw + 0.23, 0.55, 18.35, 0.45, 1.1, 0.8);
+  {
+    const P = M(xw + 0.35, 0, 17.35);
+    B.cyl('steelDark', P, 0, 0.9, 0, 0.02, 1.8);
+    for (let k = 0; k < 3; k++) { const a = k * 2 * PI / 3; B.rod('steelDark', P, [0, 0.35, 0], [Math.cos(a) * 0.32, 0.01, Math.sin(a) * 0.32], 0.012); }
+    for (let k = 0; k < 6; k++) {
+      const a = k * PI / 3, tip = [Math.cos(a) * 0.2, 1.75, Math.sin(a) * 0.2];
+      B.rod('steelDark', P, [0, 1.6, 0], tip, 0.01);
+      B.cyl('wood', P, tip[0], tip[1] + 0.02, tip[2], 0.022, 0.04, { seg: 10 });
+    }
+  }
+  // Palettensessel in der Ecke
+  {
+    const P = M(15.3, 0, 18.85);
+    pallet(B, P, palletColor());
+    pallet(B, P.clone().multiply(M(0, 0.144, 0)), palletColor());
+    B.box('fabricGrey', P, 0, 0.35, 0.02, 1.15, 0.12, 0.76, { color: 0x6e7174 });
+    B.box('fabricGrey', P, 0, 0.6, 0.33, 1.15, 0.4, 0.14, { color: 0x6e7174 });
+    B.box('blackCloth', P, 0.25, 0.55, 0.2, 0.42, 0.38, 0.12, { rx: -0.2 });
+  }
+  B.box('cabinet', I, xe - 0.3, 0.3, 16.6, 0.5, 0.6, 0.4, { color: 0xeeeeea });
+}
+
+// Ruheraum: Holzlamellenwand, Schreibtisch vor dem Fenster, Palettentisch
+function ruheraum(B) {
+  const x0 = L.X(716) + 0.06, x1 = L.X(863), zn = L.Z(320) + 0.06;
+  B.box('slats', I, (x0 + x1) / 2, L.ROOM_WALL_H / 2, zn + 0.012, x1 - x0, L.ROOM_WALL_H, 0.024);
+  desk(B, 19.4, zn + 0.42, 0, { chair: 'blackCloth', top: 'cabinet', legs: 'cabinet' });
+  officeChair(B, M(18.75, 0, zn + 1.25, 2.3), 'blackCloth');
+  const P = M(17.65, 0, zn + 0.95);
+  for (const sx of [-0.55, 0.55]) for (const sz of [-0.35, 0.35]) B.box('steel', P, sx, 0.3, sz, 0.04, 0.6, 0.04);
+  pallet(B, P.clone().multiply(M(0, 0.6, 0)), palletColor());
+  B.box('blackPlastic', P, 0, 0.76, 0, 1.22, 0.03, 0.82);
+}
+
+// Gang: Getränkeregal mit schräg eingehängten Kisten, Gelber Sack, Wasserkiste, Kallax
+function gangAusstattung(B) {
+  const q = L.R(L.GETRAENKEREGAL), xw = L.X(620) + 0.06;
+  const cols = [[0xb3261e, 0xf2b705, 0x1e4fa0], [0xb3261e, 0x1e4fa0, 0x1e4fa0]];
+  cols.forEach((col, ci) => {
+    const z = q.z0 + 0.3 + ci * 0.5;
+    for (const dz of [-0.24, 0.24]) {
+      B.rod('steel', I, [xw + 0.05, 0.02, z + dz], [xw + 0.05, 1.55, z + dz], 0.012);
+      B.rod('steel', I, [xw + 0.38, 0.02, z + dz], [xw + 0.3, 1.45, z + dz], 0.012);
+    }
+    col.forEach((c, li) => {
+      const C = M(xw + 0.22, 0.25 + li * 0.48, z, 0, 0, 0.55);
+      B.box('crate', C, 0, 0.15, 0, 0.3, 0.3, 0.42, { color: c });
+      for (let bx = 0; bx < 3; bx++) for (let bz = 0; bz < 4; bz++) B.cyl('bottleBrown', C, -0.09 + bx * 0.09, 0.32, -0.15 + bz * 0.1, 0.012, 0.08, { seg: 6 });
+    });
+  });
+  B.box('kraft', I, xw + 0.5, 0.17, q.z0 + 0.55, 0.36, 0.34, 0.4);
+  B.box('kraft', I, xw + 0.5, 0.15, q.z0 + 0.98, 0.32, 0.3, 0.36);
+  // Gelber Sack, Wasserkiste
+  const zs = q.z1 + 0.18;
+  B.box('crate', I, xw + 0.2, 0.42, zs, 0.32, 0.78, 0.34, { color: 0xe6dc8c });
+  B.box('cabinet', I, xw + 0.2, 0.83, zs, 0.38, 0.05, 0.4);
+  B.box('crate', I, xw + 0.2, 0.15, zs + 0.42, 0.4, 0.3, 0.3, { color: 0x1b2a4a });
+  for (let bx = 0; bx < 4; bx++) for (let bz = 0; bz < 3; bz++) B.cyl('glass', I, xw + 0.06 + bx * 0.09, 0.32, zs + 0.32 + bz * 0.1, 0.03, 0.06, { seg: 8 });
+
+  // Kallax 4 × 5 Fächer, Eiche
+  const k = L.R(L.KALLAX), oak = { color: 0xdcc59e }, H = 1.82, cw = (k.d - 0.07) / 4, ch = (H - 0.07) / 5;
+  for (const z of [k.z0 + 0.0175, k.z1 - 0.0175]) B.box('cabinet', I, k.cx, H / 2, z, k.w, H, 0.035, oak);
+  for (const y of [0.0175, H - 0.0175]) B.box('cabinet', I, k.cx, y, k.cz, k.w, 0.035, k.d, oak);
+  for (let i = 1; i < 4; i++) B.box('cabinet', I, k.cx, H / 2, k.z0 + 0.035 + i * cw, k.w, H - 0.07, 0.015, oak);
+  for (let j = 1; j < 5; j++) B.box('cabinet', I, k.cx, 0.035 + j * ch, k.cz, k.w, 0.015, k.d - 0.07, oak);
+  const snacks = [0xd23b2a, 0x2c6e3f, 0xf0c419, 0x3a5fb0, 0x8e44ad, 0xe67e22];
+  for (let i = 0; i < 4; i++) {
+    const cz = k.z0 + 0.035 + (i + 0.5) * cw;
+    for (const j of [0, 1]) B.box('blackCloth', I, k.cx + 0.02, 0.035 + (j + 0.5) * ch, cz, k.w - 0.08, ch - 0.04, cw - 0.04, { color: 0x4a4a4c });
+    B.box('cabinet', I, k.cx, 0.04 + 3 * ch + 0.09, cz - 0.05, 0.18, 0.16, 0.1, { color: snacks[i] });
+    B.box('cabinet', I, k.cx, 0.04 + 4 * ch + 0.07, cz + 0.06, 0.14, 0.12, 0.12, { color: snacks[i + 2] });
+  }
+  for (let i = 0; i < 3; i++) B.cyl('blackPlastic', I, k.cx, H + 0.13, k.z0 + 0.3 + i * 0.45, 0.07, 0.26, { seg: 14 });
 }
 
 // ---------- Gesamtszene ----------
@@ -388,6 +571,17 @@ export function buildScene(scene) {
   B.add(PLANE, 'concrete', M(W / 2, 0, D / 2, 0, -PI / 2).scale(_s.set(W, D, 1)));
   for (const r of L.ROOMS) if (r.floor) { const q = L.R(r.r); B.add(PLANE, r.floor, M(q.cx, 0.006, q.cz, 0, -PI / 2).scale(_s.set(q.w, q.d, 1))); }
 
+  // Gleis und Bodenblech im Hallenboden
+  {
+    const g = L.GLEIS, len = g.z1 - g.z0, zc = (g.z0 + g.z1) / 2;
+    for (const s of [-1, 1]) {
+      B.box('rubber', I, g.x + s * g.spur / 2, 0.002, zc, 0.09, 0.004, len, { color: 0x3a3a3a });
+      B.box('steelDark', I, g.x + s * g.spur / 2, 0.004, zc, 0.05, 0.004, len);
+    }
+    const q = L.R(L.BODENBLECH);
+    B.box('steelDark', I, q.cx, 0.003, q.cz, q.w, 0.006, q.d, { color: 0x8a7a68 });
+  }
+
   // Hallenwände (angeschnitten)
   const t = 0.2, Hh = L.HALL_WALL_H;
   wall(B, 'panel', -t, -t / 2, W + t, -t / 2, t, Hh);
@@ -396,19 +590,37 @@ export function buildScene(scene) {
   wall(B, 'panel', W + t / 2, 0, W + t / 2, D, t, Hh, [
     { c: L.EXIT2.z, w: L.EXIT2.w, h: 2.1 }, { c: L.EXIT1.z, w: L.EXIT1.w, h: 2.1 },
     { c: (L.HALLENTOR.z0 + L.HALLENTOR.z1) / 2, w: L.HALLENTOR.z1 - L.HALLENTOR.z0, h: 3.1 },
+    ...L.HALL_WINDOWS.map((o) => ({ c: L.Z(o.at), w: o.w, y0: 0.9, h: 2.1 })),
+    { c: (L.FENSTERBAND.z0 + L.FENSTERBAND.z1) / 2, w: L.FENSTERBAND.z1 - L.FENSTERBAND.z0, y0: L.FENSTERBAND.y0, h: Hh },
   ]);
+  // Fensterband über der Südostecke: Profilglas, ein Kippflügel
+  {
+    const f = L.FENSTERBAND, n = 8, pw = (f.z1 - f.z0) / n;
+    B.box('frame', I, W + t / 2, f.y0 + 0.03, (f.z0 + f.z1) / 2, t + 0.02, 0.06, f.z1 - f.z0);
+    for (let i = 0; i <= n; i++) B.box('frame', I, W + t / 2, (f.y0 + Hh) / 2, f.z0 + i * pw, 0.06, Hh - f.y0, 0.04);
+    for (let i = 0; i < n; i++) B.box(i === 1 ? 'glass' : 'frosted', I, W + t / 2, (f.y0 + Hh) / 2, f.z0 + (i + 0.5) * pw, 0.015, Hh - f.y0 - 0.06, pw - 0.04, { color: 0xdfeae6 });
+  }
+  for (const o of L.HALL_WINDOWS) windowUnit(B, M(W + t / 2, 0.9, L.Z(o.at), -PI / 2), o.w, 1.2, t, o.kind);
   // Türen in der Ostwand
   for (const [ex, open] of [[L.EXIT1, true], [L.EXIT2, false]]) {
     const z0 = ex.z - ex.w / 2;
     for (const zz of [z0 - 0.03, z0 + ex.w + 0.03]) B.box('frame', I, W + t / 2, 1.06, zz, t + 0.02, 2.12, 0.06);
     B.box('frame', I, W + t / 2, 2.13, ex.z, t + 0.02, 0.06, ex.w + 0.12);
     const DP = M(W + t, 0, z0, open ? 1.2 : 0);
-    B.box('doorSteel', DP, open ? 0.025 : -0.05, 1.03, ex.w / 2 - 0.01, 0.05, 2.04, ex.w - 0.03);
+    B.box(ex.color ? 'cabinet' : 'doorSteel', DP, open ? 0.025 : -0.05, 1.03, ex.w / 2 - 0.01, 0.05, 2.04, ex.w - 0.03, { color: ex.color ?? 0xffffff });
     B.box('steel', DP, open ? -0.02 : -0.11, 1.05, ex.w - 0.12, 0.04, 0.03, 0.14);
     B.plane('exitSign', I, W - 0.01, 2.38, ex.z, 0.42, 0.16, { ry: -PI / 2 });
     B.plane('exitSign', I, W + t + 0.01, 2.38, ex.z, 0.42, 0.16, { ry: PI / 2 });
   }
-  B.box('sectional', I, W + 0.06, 1.55, (L.HALLENTOR.z0 + L.HALLENTOR.z1) / 2, 0.06, 3.1, L.HALLENTOR.z1 - L.HALLENTOR.z0);
+  // Sektionaltor mit Verglasung 3 × 5 über zwei geschlossenen Paneelen
+  {
+    const z0 = L.HALLENTOR.z0, tw = L.HALLENTOR.z1 - z0, zc = z0 + tw / 2, xg = W + 0.06, g0 = 0.85, gh = (3.1 - g0) / 5;
+    B.box('sectional', I, xg, g0 / 2, zc, 0.06, g0, tw);
+    for (let r = 0; r <= 5; r++) B.box('frame', I, xg, g0 + r * gh, zc, 0.07, 0.06, tw);
+    for (let c = 0; c <= 3; c++) B.box('frame', I, xg, g0 + 2.25 / 2, z0 + 0.04 + c * (tw - 0.08) / 3, 0.07, 2.25, 0.05);
+    B.box('glass', I, xg, g0 + gh * 2.5, zc, 0.012, gh * 4, tw - 0.08);
+    B.box('frosted', I, xg, g0 + gh * 4.5, zc, 0.012, gh - 0.06, tw - 0.08, { color: 0xeef2f2 });
+  }
   B.box('frame', I, W + 0.02, 1.55, L.HALLENTOR.z0 + 0.04, 0.08, 3.1, 0.08);
   B.box('frame', I, W + 0.02, 1.55, L.HALLENTOR.z1 - 0.04, 0.08, 3.1, 0.08);
   B.box('steelDark', I, W - 0.05, 1.2, L.HALLENTOR.z0 - 0.25, 0.08, 0.18, 0.12);
@@ -420,31 +632,49 @@ export function buildScene(scene) {
     const alongX = wd.a[1] === wd.b[1];
     let x0 = L.X(wd.a[0]), z0 = L.Z(wd.a[1]), x1 = L.X(wd.b[0]), z1 = L.Z(wd.b[1]);
     if (alongX) { x0 -= tt / 2; x1 = Math.min(x1 + tt / 2, W); } else { z0 -= tt / 2; z1 += tt / 2; }
-    const ops = (wd.doors || []).map((d) => ({ c: alongX ? L.X(d.at) : L.Z(d.at), w: d.w, h: 2.05 }));
-    wall(B, 'drywall', x0, z0, x1, z1, tt, L.ROOM_WALL_H, ops, 'cutCap', i * 0.0007);
-    for (const o of ops) {
-      const a = o.c - o.w / 2;
-      // Zarge
-      for (const e of [a - 0.02, a + o.w + 0.02]) alongX ? B.box('frame', I, e, 1.03, z0, 0.04, 2.06, tt + 0.03) : B.box('frame', I, x0, 1.03, e, tt + 0.03, 2.06, 0.04);
-      // Türblatt offen (~95°)
-      const DP = alongX ? M(a + 0.02, 0, z0 + tt / 2, 0.08) : M(x0 + tt / 2, 0, a + 0.02, PI / 2 - 0.08);
-      B.box('doorWhite', DP, 0.02, 1.0, (o.w - 0.06) / 2, 0.04, 1.98, o.w - 0.06);
-      B.box('steel', DP, 0.06, 1.02, o.w - 0.14, 0.04, 0.025, 0.12);
+    const along = (px) => (alongX ? L.X(px) : L.Z(px));
+    const doors = (wd.doors || []).map((d) => ({ ...d, c: along(d.at), h: d.transom || d.type === 'double' ? 2.6 : 2.05 }));
+    const windows = (wd.windows || []).map((o) => ({ ...o, c: along(o.at), y0: 0.9, h: 2.1 }));
+    wall(B, 'drywall', x0, z0, x1, z1, tt, L.ROOM_WALL_H, [...doors, ...windows], 'cutCap', i * 0.0007);
+    for (const d of doors) door(B, alongX ? M(d.c - d.w / 2, 0, z0) : M(x0, 0, d.c - d.w / 2, -PI / 2), d, tt);
+    if (wd.hallSide) {
+      const off = wd.hallSide * (tt / 2 + 0.006), dx = alongX ? 0 : off, dz = alongX ? off : 0;
+      wall(B, 'masonry', x0 + dx, z0 + dz, x1 + dx, z1 + dz, 0.012, L.ROOM_WALL_H, [...doors, ...windows], 'masonry', -0.01);
     }
+    const inward = alongX ? (wd.indoor > 0 ? 0 : PI) : (wd.indoor > 0 ? PI / 2 : -PI / 2);
+    for (const o of windows) windowUnit(B, alongX ? M(o.c, 0.9, z0, inward) : M(x0, 0.9, o.c, inward), o.w, 1.2, tt, o.kind);
   });
+
+  // Hallenseite Einbau-Westwand: Schaltschrank, Klima-Außengerät, Brandmelder
+  {
+    const xh = L.X(620) - 0.072, z = 10.32;
+    B.box('cabinet', I, xh - 0.13, 0.95, z, 0.26, 1.3, 0.48, { color: 0xe6e3d8 });
+    B.box('steelDark', I, xh - 0.262, 1.1, z + 0.18, 0.01, 0.12, 0.03);
+    B.box('cabinet', I, xh - 0.17, 2.3, z, 0.3, 0.6, 0.75, { color: 0xeeeae0 });
+    B.plane('grille', I, xh - 0.322, 2.32, z - 0.08, 0.42, 0.42, { ry: -PI / 2 });
+    for (const dz of [-0.28, 0.28]) B.rod('steel', I, [xh, 1.85, z + dz], [xh - 0.38, 1.98, z + dz], 0.015, { square: true });
+    B.box('cabinet', I, xh - 0.03, 1.45, z - 0.37, 0.05, 0.12, 0.12, { color: 0xc81e28 });
+  }
+
+  // Hallenseite Büro-1-Südwand: Erste-Hilfe-Station, Ladeplatz, Feuerlöscher
+  {
+    const zh = L.Z(826) + 0.072;
+    B.box('cabinet', I, 18.1, 1.45, zh + 0.1, 0.45, 0.55, 0.2, { color: 0x1d6b3a });
+    B.box('cabinet', I, 18.1, 1.45, zh + 0.205, 0.14, 0.14, 0.005, { color: 0xffffff });
+    B.box('cabinet', I, 18.1, 0.75, zh + 0.1, 0.5, 0.35, 0.2, { color: 0xc81e28 });
+    B.box('steel', I, 19.25, 1.95, zh + 0.18, 1.1, 0.03, 0.36);
+    for (const x of [18.8, 19.7]) B.rod('steel', I, [x, 1.93, zh + 0.34], [x, 1.6, zh + 0.01], 0.015, { square: true });
+    B.box('cabinet', I, 19.0, 2.1, zh + 0.15, 0.4, 0.28, 0.25, { color: 0x9c2b2b });
+    B.box('blackPlastic', I, 19.35, 1.55, zh + 0.1, 0.35, 0.3, 0.2);
+    for (let k = 0; k < 3; k++) B.rod('blackPlastic', I, [19.25 + k * 0.08, 1.4, zh + 0.03], [19.2 + k * 0.1, 0.5, zh + 0.04], 0.008);
+    B.cyl('cabinet', I, W - 0.18, 0.35, L.Z(838), 0.08, 0.55, { color: 0xc81e28, seg: 14 });
+  }
 
   // Möblierung Einbau
   desk(B, L.X(690), L.Z(178), 0); desk(B, L.X(800), L.Z(178), 0);
   B.box('cabinet', I, L.X(632), 1.0, L.Z(240), 0.4, 2.0, 1.6);
-  desk(B, L.X(700), L.Z(803), PI); desk(B, L.X(805), L.Z(803), PI);
-  // Ruheraum: Sofa
-  {
-    const P = M(L.X(790), 0, L.Z(330) + 0.45);
-    B.box('fabricGrey', P, 0, 0.22, 0, 2.0, 0.42, 0.85);
-    B.box('fabricGrey', P, 0, 0.62, -0.33, 2.0, 0.45, 0.2);
-    for (const x of [-0.92, 0.92]) B.box('fabricGrey', P, x, 0.5, 0, 0.18, 0.3, 0.85);
-    for (const x of [-0.5, 0.5]) B.box('fabricGrey', P, x, 0.48, 0.05, 0.92, 0.12, 0.7, { color: 0xb0b6bc });
-  }
+  buero1(B);
+  ruheraum(B);
   // Treppenhaus: gerade Treppe entlang Nordwand (Richtung Westen steigend)
   {
     const steps = 15, x0 = L.X(858), run = 0.21, rise = L.ROOM_WALL_H / steps, z = L.Z(395) + 0.06 + 0.5;
@@ -464,15 +694,25 @@ export function buildScene(scene) {
     const sx = sinkSide ? L.X(rx[1]) - 0.06 - 0.25 : L.X(rx[0]) + 0.06 + 0.25;
     B.box('ceramic', I, sx, 0.85, L.Z(530), 0.45, 0.15, 0.5, { ry: PI / 2 });
   }
-  // Küche
+  // Küche: weiße Fronten, Holz-Arbeitsplatte, Eiche-Rückwand
   {
-    const xk = L.X(716) - 0.06 - 0.3, z0 = L.Z(325) + 0.62, z1 = L.Z(432);
-    B.box('cabinet', I, xk, 0.43, (z0 + z1) / 2, 0.6, 0.86, z1 - z0);
-    B.box('counterTop', I, xk, 0.88, (z0 + z1) / 2, 0.62, 0.04, z1 - z0);
-    B.box('cabinet', I, xk + 0.12, 1.85, (z0 + z1) / 2, 0.35, 0.7, z1 - z0);
-    B.box('cabinet', I, xk, 0.95, z0 - 0.33, 0.62, 1.9, 0.6, { color: 0xd8d8d8 });
-    B.box('steel', I, xk - 0.05, 0.905, (z0 + z1) / 2, 0.42, 0.01, 0.5);
+    const xw = L.X(716) - 0.06, xk = xw - 0.3, z0 = L.Z(325) + 0.62, z1 = L.Z(432), zc = (z0 + z1) / 2;
+    B.box('cabinet', I, xk, 0.43, zc, 0.6, 0.86, z1 - z0, { color: 0xf8f8f4 });
+    for (let z = z0 + 0.3; z < z1; z += 0.6) {
+      B.box('cabinet', I, xk - 0.3, 0.45, z - 0.3, 0.01, 0.8, 0.005, { color: 0xc8c8c2 });
+      B.box('steel', I, xk - 0.33, 0.72, z, 0.02, 0.02, 0.16);
+    }
+    B.box('steel', I, xk - 0.302, 0.44, zc + 0.15, 0.006, 0.72, 0.58);
+    B.box('darkWood', I, xk, 0.88, zc, 0.62, 0.04, z1 - z0);
+    B.box('wood', I, xw - 0.006, 1.2, zc, 0.012, 0.6, z1 - z0, { color: 0xe0c9a2 });
+    B.box('cabinet', I, xw - 0.18, 1.85, z0 + 0.45, 0.35, 0.7, 0.8, { color: 0xf8f8f4 });
+    B.box('cabinet', I, xk, 0.95, z0 - 0.33, 0.62, 1.9, 0.6, { color: 0xdcc39b });
+    B.box('steel', I, xk - 0.05, 0.905, z0 + 0.5, 0.42, 0.01, 0.5);
+    B.box('steel', I, xk + 0.05, 1.08, zc, 0.35, 0.36, 0.22);
+    B.box('blackPlastic', I, xk + 0.02, 1.05, z1 - 0.4, 0.38, 0.28, 0.48);
+    B.box('blackPlastic', I, xk + 0.12, 1.1, z0 + 0.15, 0.18, 0.4, 0.14);
   }
+  gangAusstattung(B);
   // Gehege Max: Hundekorb und Napf
   {
     const P = M(L.X(800), 0, L.Z(650));
@@ -490,7 +730,7 @@ export function buildScene(scene) {
   // Regal mit Steh-Brettern (lokale x → Welt-z, lokale z → Welt -x)
   {
     const q = L.R(L.REGAL);
-    rack(B, M(q.x1, 0, q.z0, -PI / 2), q.d, q.w, L.REGAL_LEVELS, 5.4, (li) => li > 0);
+    rack(B, M(q.x1, 0, q.z0, -PI / 2), q.d, q.w, L.REGAL_LEVELS, 5.4, (li) => li > 0, 'rackBlue');
     const front = q.x0;
     L.STEHBRETTER.forEach((sr) => {
       const s = L.R(sr), len = s.d - 0.06;
@@ -512,13 +752,6 @@ export function buildScene(scene) {
       pallet(B, PP, palletColor());
       sheetLoad(B, PP, 0.95 + rand() * 0.3);
     }
-  });
-
-  // Palettenblock? (hochkant gestellte Paletten im Gang)
-  L.PALETTENBLOCK.forEach((r) => {
-    const q = L.R(r);
-    pallet(B, M(q.x0 + 0.6, 0.4, q.cz - 0.02, 0, -PI / 2), palletColor());
-    pallet(B, M(q.x1 - 0.6, 0.4, q.cz + 0.17, 0, -PI / 2), palletColor());
   });
 
   // Absperrung Logistikbereich
