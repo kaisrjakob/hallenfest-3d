@@ -65,8 +65,8 @@ export const ROOMS = [
 // Fenster: Mittelpunkt (px) + Breite (m) + Art, indoor = Seite des Raums (Vorzeichen der Normalen)
 export const ROOM_WALLS = [
   { a: [620, 155], b: [863, 155] },
-  { a: [620, 155], b: [620, 826], hallSide: true, doors: [{ at: 348, w: 1.0, type: 'steel' }, { at: 480, w: 1.1, type: 'steel' }] },
-  { a: [620, 826], b: [863, 826], indoor: -1, windows: [{ at: 676, w: 2.3, kind: 'frosted' }, { at: 789, w: 2.3, kind: 'awning' }] },
+  { a: [620, 155], b: [620, 826], hallSide: -1, doors: [{ at: 348, w: 1.0, type: 'steel' }, { at: 480, w: 1.1, type: 'steel' }] },
+  { a: [620, 826], b: [863, 826], indoor: -1, hallSide: 1, windows: [{ at: 676, w: 2.3, kind: 'frosted' }] },
   { a: [620, 320], b: [863, 320], doors: [{ at: 668, w: 0.9, type: 'glass' }] },
   { a: [716, 320], b: [716, 595], doors: [{ at: 474, w: 1.6, type: 'double' }] },
   { a: [716, 395], b: [863, 395], doors: [{ at: 800, w: 0.9, type: 'sliding' }] },
@@ -97,9 +97,10 @@ export const GETRAENKEREGAL = [622, 380, 640, 430];
 export const KALLAX = [697, 517, 714, 579];
 
 // Öffnungen in der Ostwand (x = 863 px)
-export const EXIT1 = { z: Z(850), w: 1.0 };
+export const EXIT1 = { z: Z(850), w: 1.0, color: 0x9c2b2b };
 export const EXIT2 = { z: Z(480), w: 1.0 };
 export const HALLENTOR = { z0: Z(875), z1: Z(970) };
+export const FENSTERBAND = { z0: Z(976), z1: Z(1074), y0: 2.3 };
 
 export const GRILL = R([876, 692, 1078, 827]);
 

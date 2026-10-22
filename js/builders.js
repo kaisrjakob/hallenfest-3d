@@ -591,7 +591,15 @@ export function buildScene(scene) {
     { c: L.EXIT2.z, w: L.EXIT2.w, h: 2.1 }, { c: L.EXIT1.z, w: L.EXIT1.w, h: 2.1 },
     { c: (L.HALLENTOR.z0 + L.HALLENTOR.z1) / 2, w: L.HALLENTOR.z1 - L.HALLENTOR.z0, h: 3.1 },
     ...L.HALL_WINDOWS.map((o) => ({ c: L.Z(o.at), w: o.w, y0: 0.9, h: 2.1 })),
+    { c: (L.FENSTERBAND.z0 + L.FENSTERBAND.z1) / 2, w: L.FENSTERBAND.z1 - L.FENSTERBAND.z0, y0: L.FENSTERBAND.y0, h: Hh },
   ]);
+  // Fensterband über der Südostecke: Profilglas, ein Kippflügel
+  {
+    const f = L.FENSTERBAND, n = 8, pw = (f.z1 - f.z0) / n;
+    B.box('frame', I, W + t / 2, f.y0 + 0.03, (f.z0 + f.z1) / 2, t + 0.02, 0.06, f.z1 - f.z0);
+    for (let i = 0; i <= n; i++) B.box('frame', I, W + t / 2, (f.y0 + Hh) / 2, f.z0 + i * pw, 0.06, Hh - f.y0, 0.04);
+    for (let i = 0; i < n; i++) B.box(i === 1 ? 'glass' : 'frosted', I, W + t / 2, (f.y0 + Hh) / 2, f.z0 + (i + 0.5) * pw, 0.015, Hh - f.y0 - 0.06, pw - 0.04, { color: 0xdfeae6 });
+  }
   for (const o of L.HALL_WINDOWS) windowUnit(B, M(W + t / 2, 0.9, L.Z(o.at), -PI / 2), o.w, 1.2, t, o.kind);
   // Türen in der Ostwand
   for (const [ex, open] of [[L.EXIT1, true], [L.EXIT2, false]]) {
@@ -599,12 +607,20 @@ export function buildScene(scene) {
     for (const zz of [z0 - 0.03, z0 + ex.w + 0.03]) B.box('frame', I, W + t / 2, 1.06, zz, t + 0.02, 2.12, 0.06);
     B.box('frame', I, W + t / 2, 2.13, ex.z, t + 0.02, 0.06, ex.w + 0.12);
     const DP = M(W + t, 0, z0, open ? 1.2 : 0);
-    B.box('doorSteel', DP, open ? 0.025 : -0.05, 1.03, ex.w / 2 - 0.01, 0.05, 2.04, ex.w - 0.03);
+    B.box(ex.color ? 'cabinet' : 'doorSteel', DP, open ? 0.025 : -0.05, 1.03, ex.w / 2 - 0.01, 0.05, 2.04, ex.w - 0.03, { color: ex.color ?? 0xffffff });
     B.box('steel', DP, open ? -0.02 : -0.11, 1.05, ex.w - 0.12, 0.04, 0.03, 0.14);
     B.plane('exitSign', I, W - 0.01, 2.38, ex.z, 0.42, 0.16, { ry: -PI / 2 });
     B.plane('exitSign', I, W + t + 0.01, 2.38, ex.z, 0.42, 0.16, { ry: PI / 2 });
   }
-  B.box('sectional', I, W + 0.06, 1.55, (L.HALLENTOR.z0 + L.HALLENTOR.z1) / 2, 0.06, 3.1, L.HALLENTOR.z1 - L.HALLENTOR.z0);
+  // Sektionaltor mit Verglasung 3 × 5 über zwei geschlossenen Paneelen
+  {
+    const z0 = L.HALLENTOR.z0, tw = L.HALLENTOR.z1 - z0, zc = z0 + tw / 2, xg = W + 0.06, g0 = 0.85, gh = (3.1 - g0) / 5;
+    B.box('sectional', I, xg, g0 / 2, zc, 0.06, g0, tw);
+    for (let r = 0; r <= 5; r++) B.box('frame', I, xg, g0 + r * gh, zc, 0.07, 0.06, tw);
+    for (let c = 0; c <= 3; c++) B.box('frame', I, xg, g0 + 2.25 / 2, z0 + 0.04 + c * (tw - 0.08) / 3, 0.07, 2.25, 0.05);
+    B.box('glass', I, xg, g0 + gh * 2.5, zc, 0.012, gh * 4, tw - 0.08);
+    B.box('frosted', I, xg, g0 + gh * 4.5, zc, 0.012, gh - 0.06, tw - 0.08, { color: 0xeef2f2 });
+  }
   B.box('frame', I, W + 0.02, 1.55, L.HALLENTOR.z0 + 0.04, 0.08, 3.1, 0.08);
   B.box('frame', I, W + 0.02, 1.55, L.HALLENTOR.z1 - 0.04, 0.08, 3.1, 0.08);
   B.box('steelDark', I, W - 0.05, 1.2, L.HALLENTOR.z0 - 0.25, 0.08, 0.18, 0.12);
@@ -621,7 +637,10 @@ export function buildScene(scene) {
     const windows = (wd.windows || []).map((o) => ({ ...o, c: along(o.at), y0: 0.9, h: 2.1 }));
     wall(B, 'drywall', x0, z0, x1, z1, tt, L.ROOM_WALL_H, [...doors, ...windows], 'cutCap', i * 0.0007);
     for (const d of doors) door(B, alongX ? M(d.c - d.w / 2, 0, z0) : M(x0, 0, d.c - d.w / 2, -PI / 2), d, tt);
-    if (wd.hallSide) wall(B, 'masonry', x0 - tt / 2 - 0.006, z0, x1 - tt / 2 - 0.006, z1, 0.012, L.ROOM_WALL_H, doors, 'masonry', -0.01);
+    if (wd.hallSide) {
+      const off = wd.hallSide * (tt / 2 + 0.006), dx = alongX ? 0 : off, dz = alongX ? off : 0;
+      wall(B, 'masonry', x0 + dx, z0 + dz, x1 + dx, z1 + dz, 0.012, L.ROOM_WALL_H, [...doors, ...windows], 'masonry', -0.01);
+    }
     const inward = alongX ? (wd.indoor > 0 ? 0 : PI) : (wd.indoor > 0 ? PI / 2 : -PI / 2);
     for (const o of windows) windowUnit(B, alongX ? M(o.c, 0.9, z0, inward) : M(x0, 0.9, o.c, inward), o.w, 1.2, tt, o.kind);
   });
@@ -635,6 +654,20 @@ export function buildScene(scene) {
     B.plane('grille', I, xh - 0.322, 2.32, z - 0.08, 0.42, 0.42, { ry: -PI / 2 });
     for (const dz of [-0.28, 0.28]) B.rod('steel', I, [xh, 1.85, z + dz], [xh - 0.38, 1.98, z + dz], 0.015, { square: true });
     B.box('cabinet', I, xh - 0.03, 1.45, z - 0.37, 0.05, 0.12, 0.12, { color: 0xc81e28 });
+  }
+
+  // Hallenseite Büro-1-Südwand: Erste-Hilfe-Station, Ladeplatz, Feuerlöscher
+  {
+    const zh = L.Z(826) + 0.072;
+    B.box('cabinet', I, 18.1, 1.45, zh + 0.1, 0.45, 0.55, 0.2, { color: 0x1d6b3a });
+    B.box('cabinet', I, 18.1, 1.45, zh + 0.205, 0.14, 0.14, 0.005, { color: 0xffffff });
+    B.box('cabinet', I, 18.1, 0.75, zh + 0.1, 0.5, 0.35, 0.2, { color: 0xc81e28 });
+    B.box('steel', I, 19.25, 1.95, zh + 0.18, 1.1, 0.03, 0.36);
+    for (const x of [18.8, 19.7]) B.rod('steel', I, [x, 1.93, zh + 0.34], [x, 1.6, zh + 0.01], 0.015, { square: true });
+    B.box('cabinet', I, 19.0, 2.1, zh + 0.15, 0.4, 0.28, 0.25, { color: 0x9c2b2b });
+    B.box('blackPlastic', I, 19.35, 1.55, zh + 0.1, 0.35, 0.3, 0.2);
+    for (let k = 0; k < 3; k++) B.rod('blackPlastic', I, [19.25 + k * 0.08, 1.4, zh + 0.03], [19.2 + k * 0.1, 0.5, zh + 0.04], 0.008);
+    B.cyl('cabinet', I, W - 0.18, 0.35, L.Z(838), 0.08, 0.55, { color: 0xc81e28, seg: 14 });
   }
 
   // Möblierung Einbau
