@@ -175,6 +175,8 @@ function makeMaterials() {
     whiteboard: std({ color: 0xfafaf8, roughness: 0.12 }),
     fabricBlue: std({ color: 0x223f86, roughness: 0.95 }),
     rackGalv: std({ color: 0xaab0b5, roughness: 0.38, metalness: 0.75 }),
+    rackBlue: std({ color: 0x1c4f92, roughness: 0.42, metalness: 0.35 }),
+    masonry: std({ map: TX.masonry(), roughness: 0.9 }, 1),
     guard: std({ map: TX.guardStripes(), roughness: 0.5 }),
   };
   const glassy = (color, opacity, rough) => {
@@ -225,29 +227,33 @@ function sheetLoad(B, P, h) {
 }
 
 // Palettenregal: lokale x = Länge, z = Tiefe (0..depth)
-function rack(B, P, len, depth, levels, H, loadLevel) {
+function rack(B, P, len, depth, levels, H, loadLevel, frame = 'rackGalv') {
   const bays = Math.max(1, Math.round(len / 2.85)), bl = len / bays, up = 0.08, ud = 0.07;
   for (let i = 0; i <= bays; i++) {
     const x = Math.min(Math.max(i * bl, up / 2), len - up / 2);
     for (const z of [ud / 2, depth - ud / 2]) {
-      B.box('rackGalv', P, x, H / 2, z, up, H, ud);
+      B.box(frame, P, x, H / 2, z, up, H, ud);
       B.box('steelDark', P, x, 0.005, z, 0.15, 0.01, 0.13);
-      if (i === bays) B.box('guard', P, x + 0.02, 0.2, z, 0.14, 0.4, 0.13);
+      if (i === bays) B.box('guard', P, x + 0.03, 0.2, z, 0.14, 0.4, 0.14);
     }
+    if (i === bays) B.box('rackGalv', P, x + 0.07, 0.2, depth / 2, 0.04, 0.36, depth - 0.12);
     const n = Math.max(3, Math.round(H / 0.95));
     for (let k = 0; k <= n; k++) {
       const y = 0.15 + k * (H - 0.3) / n;
-      B.rod('rackGalv', P, [x, y, ud], [x, y, depth - ud], 0.014, { seg: 6 });
+      B.rod(frame, P, [x, y, ud], [x, y, depth - ud], 0.014, { seg: 6 });
       if (k < n) {
         const y1 = 0.15 + (k + 1) * (H - 0.3) / n;
-        B.rod('rackGalv', P, [x, y, k % 2 ? depth - ud : ud], [x, y1, k % 2 ? ud : depth - ud], 0.012, { seg: 6 });
+        B.rod(frame, P, [x, y, k % 2 ? depth - ud : ud], [x, y1, k % 2 ? ud : depth - ud], 0.012, { seg: 6 });
       }
     }
   }
   for (let b = 0; b < bays; b++) {
     const cx = (b + 0.5) * bl;
     levels.forEach((lv, li) => {
-      if (lv > 0) for (const z of [ud / 2, depth - ud / 2]) B.box('rackOrange', P, cx, lv - 0.055, z, bl - up, 0.11, 0.05);
+      if (lv > 0) for (const z of [ud / 2, depth - ud / 2]) {
+        B.box('rackOrange', P, cx, lv - 0.055, z, bl - up, 0.11, 0.05);
+        for (let k = 0; k < 3; k++) B.box('cabinet', P, b * bl + up / 2 + (bl - up) * (k + 0.5) / 3, lv - 0.055, z + (z < depth / 2 ? -0.027 : 0.027), 0.16, 0.06, 0.004, { color: 0xf5d20a });
+      }
       if (!loadLevel(li)) return;
       for (let k = 0; k < 3; k++) {
         if (rand() > 0.86) continue;
@@ -604,9 +610,21 @@ export function buildScene(scene) {
     const windows = (wd.windows || []).map((o) => ({ ...o, c: along(o.at), y0: 0.9, h: 2.1 }));
     wall(B, 'drywall', x0, z0, x1, z1, tt, L.ROOM_WALL_H, [...doors, ...windows], 'cutCap', i * 0.0007);
     for (const d of doors) door(B, alongX ? M(d.c - d.w / 2, 0, z0) : M(x0, 0, d.c - d.w / 2, -PI / 2), d, tt);
+    if (wd.hallSide) wall(B, 'masonry', x0 - tt / 2 - 0.006, z0, x1 - tt / 2 - 0.006, z1, 0.012, L.ROOM_WALL_H, doors, 'masonry', -0.01);
     const inward = alongX ? (wd.indoor > 0 ? 0 : PI) : (wd.indoor > 0 ? PI / 2 : -PI / 2);
     for (const o of windows) windowUnit(B, alongX ? M(o.c, 0.9, z0, inward) : M(x0, 0.9, o.c, inward), o.w, 1.2, tt, o.kind);
   });
+
+  // Hallenseite Einbau-Westwand: Schaltschrank, Klima-Außengerät, Brandmelder
+  {
+    const xh = L.X(620) - 0.072, z = 10.32;
+    B.box('cabinet', I, xh - 0.13, 0.95, z, 0.26, 1.3, 0.48, { color: 0xe6e3d8 });
+    B.box('steelDark', I, xh - 0.262, 1.1, z + 0.18, 0.01, 0.12, 0.03);
+    B.box('cabinet', I, xh - 0.17, 2.3, z, 0.3, 0.6, 0.75, { color: 0xeeeae0 });
+    B.plane('grille', I, xh - 0.322, 2.32, z - 0.08, 0.42, 0.42, { ry: -PI / 2 });
+    for (const dz of [-0.28, 0.28]) B.rod('steel', I, [xh, 1.85, z + dz], [xh - 0.38, 1.98, z + dz], 0.015, { square: true });
+    B.box('cabinet', I, xh - 0.03, 1.45, z - 0.37, 0.05, 0.12, 0.12, { color: 0xc81e28 });
+  }
 
   // Möblierung Einbau
   desk(B, L.X(690), L.Z(178), 0); desk(B, L.X(800), L.Z(178), 0);
@@ -668,7 +686,7 @@ export function buildScene(scene) {
   // Regal mit Steh-Brettern (lokale x → Welt-z, lokale z → Welt -x)
   {
     const q = L.R(L.REGAL);
-    rack(B, M(q.x1, 0, q.z0, -PI / 2), q.d, q.w, L.REGAL_LEVELS, 5.4, (li) => li > 0);
+    rack(B, M(q.x1, 0, q.z0, -PI / 2), q.d, q.w, L.REGAL_LEVELS, 5.4, (li) => li > 0, 'rackBlue');
     const front = q.x0;
     L.STEHBRETTER.forEach((sr) => {
       const s = L.R(sr), len = s.d - 0.06;

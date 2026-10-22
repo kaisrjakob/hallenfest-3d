@@ -134,6 +134,21 @@ function tileCanvas(S, nx, ny, base, grout, seed) {
 export const tiles = () => tex(tileCanvas(512, 2, 4, [160, 160, 155], '#77766f', 31));
 export const tilesWhite = () => tex(tileCanvas(512, 3, 3, [228, 228, 224], '#b8b8b2', 32));
 
+// weiß gestrichenes Kalksandstein-Mauerwerk, 1 m Kachel (Steine 50 × 25 cm)
+export function masonry() {
+  const S = 512, [c, g] = canvas(S), r = rng(36);
+  g.fillStyle = '#d3d2cc'; g.fillRect(0, 0, S, S);
+  const bh = S / 4, bw = S / 2;
+  for (let row = 0; row < 4; row++) for (let k = -1; k < 2; k++) {
+    const x = k * bw + (row % 2) * bw / 2, t = 228 + r() * 14;
+    g.fillStyle = `rgb(${t},${t},${t - 4})`;
+    g.fillRect(x + 2, row * bh + 2, bw - 4, bh - 4);
+  }
+  blotches(g, S, r, 40, 20, 90, ['150,148,140'], 0.03, 0.08);
+  grain(g, S, S, r, 8);
+  return tex(c);
+}
+
 // Nadelfilz blaugrau, 1 m Kachel
 export function carpet() {
   const S = 512, [c, g] = canvas(S), r = rng(33);

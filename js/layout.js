@@ -65,7 +65,7 @@ export const ROOMS = [
 // Fenster: Mittelpunkt (px) + Breite (m) + Art, indoor = Seite des Raums (Vorzeichen der Normalen)
 export const ROOM_WALLS = [
   { a: [620, 155], b: [863, 155] },
-  { a: [620, 155], b: [620, 826], doors: [{ at: 348, w: 1.0, type: 'steel' }, { at: 480, w: 1.1, type: 'steel' }] },
+  { a: [620, 155], b: [620, 826], hallSide: true, doors: [{ at: 348, w: 1.0, type: 'steel' }, { at: 480, w: 1.1, type: 'steel' }] },
   { a: [620, 826], b: [863, 826], indoor: -1, windows: [{ at: 676, w: 2.3, kind: 'frosted' }, { at: 789, w: 2.3, kind: 'awning' }] },
   { a: [620, 320], b: [863, 320], doors: [{ at: 668, w: 0.9, type: 'glass' }] },
   { a: [716, 320], b: [716, 595], doors: [{ at: 474, w: 1.6, type: 'double' }] },
