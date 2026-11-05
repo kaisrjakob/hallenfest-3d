@@ -83,6 +83,10 @@ export const MAX = {
   loop: { cx: GEHEGE.x0 + 1.22, cz: GEHEGE.cz, rx: 0.6, rz: 0.58 },
   bowl: [GEHEGE.x0 + 0.34, GEHEGE.z1 - 0.55],
   feeder: { x: GEHEGE.x0, z: GEHEGE.z1 - 0.55 },
+  basket: [X(800), Z(650)],
+  water: [X(800) + 0.8, Z(650) + 0.2],
+  gate: [GEHEGE.x0, Z(642)],
+  area: { x0: GEHEGE.x0, z0: GEHEGE.z0, x1: GEHEGE.x1, z1: GEHEGE.z1 },
   fenceH: 1.2,
 };
 
@@ -132,7 +136,7 @@ export const VIEWS = {
   party:     { label: 'Party-Bereich', pos: [22.5, 8.5, 11],   target: [10.5, 0.3, 19], fitR: 8 },
   bar:       { label: 'Bar & Musik',   pos: [13.4, 2.2, 19.6], target: [7.4, 1.1, 14.0], eye: true },
   stehtische:{ label: 'Stehtische',    pos: [9.6, 1.8, 22.4],  target: [12.4, 1.0, 14.8], eye: true },
-  max:       { label: 'Max',           pos: [14.85, 3.5, 14.1], target: [16.75, 0.5, 15.45], eye: true },
+  max:       { label: 'Max',           pos: [15.0, 4.1, 14.15], target: [17.75, 0.3, 15.25], eye: true },
   gang:      { label: 'Gang',          pos: [15.28, 1.65, 15.95], target: [15.6, 1.2, 7.6],  eye: true },
   eingang:   { label: 'Eingang #1',    pos: [19.6, 1.65, 22.2],target: [9, 1.2, 17.8], eye: true },
   grill:     { label: 'Grill',         pos: [29.8, 3.6, 25.6], target: [22.6, 0.9, 17.6], fitR: 5.5 },

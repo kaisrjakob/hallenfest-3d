@@ -126,6 +126,10 @@ function viewCamera(name) {
 
 function goTo(name, instant = false) {
   const c = viewCamera(name);
+  if (!instant) {
+    max.closeMenu();
+    if (name === 'max') { max.visitorArrived(); showHint('Max antippen für Kommandos · Kurbel dreht den Futterspender'); }
+  }
   document.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
   if (instant) {
     camera.position.copy(c.pos); controls.target.copy(c.target); camera.fov = c.fov; camera.updateProjectionMatrix();
@@ -237,39 +241,53 @@ function buildUI() {
   };
   document.getElementById('btn-feed').onclick = () => {
     if (currentView !== 'max') { currentView = 'max'; goTo('max'); }
-    feedMax();
+    max.feed();
   };
-  // Antippen/Klicken des Futterspenders im Modell (nicht beim Drehen der Ansicht)
+  // Antippen/Klicken von Max oder dem Futterspender im Modell (nicht beim Drehen der Ansicht)
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   let down = null;
   labelRenderer.domElement.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; });
   labelRenderer.domElement.addEventListener('pointerup', (e) => {
     if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return;
+    if (max.menuOpen) { max.closeMenu(); return; }
     const r = labelRenderer.domElement.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    if (ray.intersectObject(max.feeder, true).length) feedMax();
+    const hits = ray.intersectObjects([max.feeder, max.hit], true);
+    if (!hits.length) return;
+    if (hits[0].object === max.hit) {
+      if (hits[0].distance < MAX_TAP_DISTANCE) max.openMenu(e.clientX, e.clientY);
+    } else max.feed();
   });
-  const hint = document.getElementById('hint');
-  const hideHint = () => hint.classList.add('hide');
   labelRenderer.domElement.addEventListener('pointerdown', hideHint, { once: true });
   setTimeout(hideHint, 9000);
 }
 
+const MAX_TAP_DISTANCE = 12;
+const hint = document.getElementById('hint');
+let hintTimer = 0;
+function hideHint() { hint.classList.add('hide'); }
+function showHint(text) {
+  hint.textContent = text;
+  hint.classList.remove('hide');
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(hideHint, 5000);
+}
+
 let toastTimer = 0;
-function feedMax() {
-  const n = max.feed();
+function toast(text) {
   const t = document.getElementById('toast');
-  t.textContent = n === 1 ? 'Max frisst – danke fürs Füttern!' : `Max frisst – schon ${n}× gefüttert`;
+  t.textContent = text;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
 let world, max;
 function start() {
   world = buildScene(scene);
-  max = createMax(scene);
+  max = createMax(scene, camera, { say: toast, calm: !!renderView });
+  if (params.has('debug')) Object.assign(window, { __max: max, __camera: camera });
   labels.push(max.label);
   if (renderView) {
     document.body.classList.add('render');
