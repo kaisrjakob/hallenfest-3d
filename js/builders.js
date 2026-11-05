@@ -715,7 +715,7 @@ export function buildScene(scene) {
   gangAusstattung(B);
   // Gehege Max: Hundekorb und Napf
   {
-    const P = M(L.X(800), 0, L.Z(650));
+    const P = M(L.MAX.basket[0], 0, L.MAX.basket[1]);
     B.cyl('fabricBrown', P, 0, 0.1, 0, 0.5, 0.2, { seg: 24, r2: 0.38 });
     B.cyl('fabricGrey', P, 0, 0.12, 0, 0.4, 0.2, { seg: 24, r2: 0.29 });
     B.cyl('steel', P, 0.8, 0.035, 0.2, 0.1, 0.07, { seg: 16 });
